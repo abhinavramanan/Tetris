@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TETRIS</title>
+    <link rel="stylesheet" type="text/css" href="styles.css" />
+</head>
+<body>
+<div class="ui-bar">
+    <button id="toggle-theme" aria-label="Toggle dark or light mode">
+        <span id="theme-icon">
+            <!-- Sun SVG (default) -->
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="5" fill="#FFC107"/>
+                <g stroke="#FFC107" stroke-width="2">
+                    <line x1="12" y1="1" x2="12" y2="4"/>
+                    <line x1="12" y1="20" x2="12" y2="23"/>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                    <line x1="1" y1="12" x2="4" y2="12"/>
+                    <line x1="20" y1="12" x2="23" y2="12"/>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </g>
+            </svg>
+        </span>
+    </button>
+    <button id="toggle-sound" aria-label="Mute or unmute sound">
+        <span id="sound-icon">
+            <!-- Speaker SVG (default) -->
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="3" y="9" width="4" height="6" fill="#8bc34a"/>
+                <polygon points="7,9 14,4 14,20 7,15 " fill="#8bc34a"/>
+                <path d="M16 8C17.6569 9.65685 17.6569 14.3431 16 16" stroke="#8bc34a" stroke-width="2" fill="none"/>
+            </svg>
+        </span>
+    </button>
+</div>
+<div id="tetris">
+    <div id="info">
+        <div id="next_shape"></div>
+        <p id="level">Level: <span></span></p>
+        <p id="lines">Lines: <span></span></p>
+        <p id="score">Score: <span></span></p>
+        <p id="time">Time: <span></span></p>
+        <button id="start">Start</button>
+        <p class="red">Press the Esc button to pause<span></span></p>
+    </div>
+    <div id="canvas"></div>
+</div>
+<div id="pause-overlay" class="modal" aria-modal="true" aria-label="Game Paused" style="display:none;">
+    <div class="modal-content">
+        <h2>Paused</h2>
+        <button id="resume">Resume</button>
+    </div>
+</div>
+<div id="next-level-modal" class="modal" aria-modal="true" aria-label="Next Level" style="display:none;">
+    <div class="modal-content">
+        <h2>Level Up!</h2>
+        <p>Get ready for the next level.</p>
+        <button id="next-level-btn">Continue</button>
+    </div>
+</div>
+<div id="rules-modal" class="modal" aria-modal="true" aria-label="Game Rules" style="display:flex;">
+    <div class="modal-content">
+        <h2>How to Play Tetris</h2>
+        <ul style="text-align:left;max-width:340px;margin:0 auto 18px auto;">
+            <li>Move and rotate falling blocks to complete horizontal lines.</li>
+            <li>Completed lines disappear and score points.</li>
+            <li>Game speed increases as you level up.</li>
+            <li>Use arrow keys or swipe/tap on mobile to control blocks.</li>
+            <li>Press Esc to pause. Click Continue to advance to the next level.</li>
+            <li>Game ends when the stack reaches the top.</li>
+        </ul>
+        <button id="rules-continue">Start Game</button>
+    </div>
+</div>
+<script type="text/javascript" src="script.js"></script>
+</body>
+</html>
