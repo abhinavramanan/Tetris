@@ -175,6 +175,15 @@ body {
 .modal-content button:hover {
     background: var(--button-hover);
 }
+/* Game over styling */
+#canvas .game-over {
+    color: #ff6666;
+    text-align: center;
+    margin-top: 200px;
+    font-size: 24px;
+    font-weight: bold;
+}
+
 /* Mobile responsive design */
 @media (max-width: 600px) {
     body {

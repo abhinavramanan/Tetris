@@ -325,7 +325,13 @@
         gameOver: function () {
             this.clearTimers();
             isStart = false;
-            this.canvas.innerHTML = '<h1>GAME OVER</h1>';
+            this.canvas.innerHTML = '<div style="color: #ff6666; text-align: center; margin-top: 200px; font-size: 24px; font-weight: bold;">GAME OVER</div>';
+            // Show start button again for restart
+            const startBtn = document.getElementById('start');
+            if (startBtn) {
+                startBtn.style.display = 'block';
+                startBtn.textContent = 'Restart';
+            }
         },
         play: function () {
             var me = this;
@@ -613,18 +619,42 @@
     const btn = document.querySelector('#start');
     btn.addEventListener('click', function () {
         btn.style.display = 'none';
+        btn.textContent = 'Start'; // Reset button text
         if (!isStart) {
+            // Reset game state for restart
+            if (window.tetris) {
+                tetris.score = 0;
+                tetris.level = 1;
+                tetris.lines = 0;
+                tetris.time = 0;
+                tetris.speed = 700;
+                tetris.board = [];
+                tetris.sqs = [];
+                tetris.canvas.innerHTML = '';
+                var s = tetris.boardHeight * tetris.boardWidth;
+                for (var i = 0; i < s; i++) {
+                    tetris.board.push(0);
+                }
+            }
             tetris.init();
         }
     });
 
     // === SIMPLE UI CONTROLS ===
     (function () {
-        // Simple theme toggle (just for the button functionality)
+        // Simple theme toggle
         const themeBtn = document.getElementById('toggle-theme');
         if (themeBtn) {
             themeBtn.addEventListener('click', function () {
-                document.body.style.background = document.body.style.background === 'rgb(255, 255, 255)' ? '#000000' : '#ffffff';
+                const body = document.body;
+                const isLight = body.style.background === 'rgb(255, 255, 255)';
+                if (isLight) {
+                    body.style.background = '#000000';
+                    themeBtn.textContent = 'Light';
+                } else {
+                    body.style.background = '#ffffff';
+                    themeBtn.textContent = 'Dark';
+                }
             });
         }
 
@@ -645,11 +675,13 @@
         }
         
         document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') {
+            if (e.key === 'Escape' && isStart) {
                 if (pauseOverlay && pauseOverlay.style.display === 'flex') {
                     hidePause();
+                    if (window.tetris) tetris.play();
                 } else {
                     showPause();
+                    if (window.tetris) tetris.togglePause();
                 }
             }
         });
