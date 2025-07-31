@@ -138,7 +138,8 @@
                 this.nextShape = this.shapes[this.nextShapeIndex];
                 this.drawNextShape();
             } catch (e) {
-                throw new Error('Could not create next shape. ' + e);
+                console.error('Could not create next shape:', e);
+                this.gameOver();
             }
         },
         initTempShapes: function () {
@@ -167,7 +168,8 @@
                     this.tempShapes.shift();
                 }
             } catch (e) {
-                throw new Error('Could not shift or init tempShapes: ' + e);
+                console.error('Could not shift or init tempShapes:', e);
+                this.initTempShapes(); // Fallback
             }
         },
         initTimer: function () {
@@ -323,7 +325,13 @@
         gameOver: function () {
             this.clearTimers();
             isStart = false;
-            this.canvas.innerHTML = '<h1>GAME OVER</h1>';
+            this.canvas.innerHTML = '<div style="color: #ff6666; text-align: center; margin-top: 200px; font-size: 24px; font-weight: bold;">GAME OVER</div>';
+            // Show start button again for restart
+            const startBtn = document.getElementById('start');
+            if (startBtn) {
+                startBtn.style.display = 'block';
+                startBtn.textContent = 'Restart';
+            }
         },
         play: function () {
             var me = this;
@@ -386,8 +394,8 @@
                     return true;
                     break;
                 default:
-                    throw new Error('wtf');
-                    break;
+                    console.warn('Invalid move direction:', dir);
+                    return false;
             }
             if (this.checkMove(tempX, tempY, this.curShape)) {
                 this.curSqs.eachdo(function (i) {
@@ -418,7 +426,7 @@
                     this.removeCur();
                     this.drawShape(this.curX, this.curY, this.curShape);
                 } else {
-                    throw new Error('Could not rotate!');
+                    console.warn('Could not rotate piece - invalid position');
                 }
             }
             this.drawGhost();
@@ -474,12 +482,10 @@
             var start = this.boardHeight;
             this.curShape.eachdo(function () {
                 var n = this[1] + me.curY;
-                console.log(n);
                 if (n < start) {
                     start = n;
                 }
             });
-            console.log(start);
 
             var c = 0;
             var stopCheck = false;
@@ -613,162 +619,97 @@
     const btn = document.querySelector('#start');
     btn.addEventListener('click', function () {
         btn.style.display = 'none';
+        btn.textContent = 'Start'; // Reset button text
         if (!isStart) {
+            // Reset game state for restart
+            if (window.tetris) {
+                tetris.score = 0;
+                tetris.level = 1;
+                tetris.lines = 0;
+                tetris.time = 0;
+                tetris.speed = 700;
+                tetris.board = [];
+                tetris.sqs = [];
+                tetris.canvas.innerHTML = '';
+                var s = tetris.boardHeight * tetris.boardWidth;
+                for (var i = 0; i < s; i++) {
+                    tetris.board.push(0);
+                }
+            }
             tetris.init();
         }
     });
 
-    // === UI/UX ENHANCEMENTS ===
+    // === SIMPLE UI CONTROLS ===
     (function () {
-        // Theme toggle
+        // Simple theme toggle
         const themeBtn = document.getElementById('toggle-theme');
-        const themeIcon = document.getElementById('theme-icon');
-        const sunSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="5" fill="#FFC107"/><g stroke="#FFC107" stroke-width="2"><line x1="12" y1="1" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></g></svg>`;
-        const moonSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z" fill="#FFC107"/></svg>`;
-        themeBtn.addEventListener('click', function () {
-            document.body.classList.toggle('dark');
-            themeIcon.innerHTML = document.body.classList.contains('dark') ? moonSVG : sunSVG;
-        });
-        themeIcon.innerHTML = sunSVG;
+        if (themeBtn) {
+            themeBtn.addEventListener('click', function () {
+                const body = document.body;
+                const isLight = body.style.background === 'rgb(255, 255, 255)';
+                if (isLight) {
+                    body.style.background = '#000000';
+                    themeBtn.textContent = 'Light';
+                } else {
+                    body.style.background = '#ffffff';
+                    themeBtn.textContent = 'Dark';
+                }
+            });
+        }
 
-        // Sound/music
-        let isMuted = false;
-        const soundBtn = document.getElementById('toggle-sound');
-        const soundIcon = document.getElementById('sound-icon');
-        const speakerSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="9" width="4" height="6" fill="#8bc34a"/><polygon points="7,9 14,4 14,20 7,15" fill="#8bc34a"/><path d="M16 8C17.6569 9.65685 17.6569 14.3431 16 16" stroke="#8bc34a" stroke-width="2" fill="none"/></svg>`;
-        const muteSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="9" width="4" height="6" fill="#8bc34a"/><polygon points="7,9 14,4 14,20 7,15" fill="#8bc34a"/><line x1="17" y1="7" x2="21" y2="17" stroke="#e53935" stroke-width="2"/><line x1="21" y1="7" x2="17" y2="17" stroke="#e53935" stroke-width="2"/></svg>`;
-        soundBtn.addEventListener('click', function () {
-            isMuted = !isMuted;
-            soundIcon.innerHTML = isMuted ? muteSVG : speakerSVG;
-            bgm.muted = isMuted;
-        });
-        soundIcon.innerHTML = speakerSVG;
-
-        // Pause overlay
+        // Simple pause functionality
         const pauseOverlay = document.getElementById('pause-overlay');
         const resumeBtn = document.getElementById('resume');
+        
         function showPause() {
-            pauseOverlay.style.display = 'flex';
-            bgm.pause();
+            if (pauseOverlay) pauseOverlay.style.display = 'flex';
         }
+        
         function hidePause() {
-            pauseOverlay.style.display = 'none';
-            if (!isMuted) bgm.play();
+            if (pauseOverlay) pauseOverlay.style.display = 'none';
         }
-        resumeBtn.addEventListener('click', hidePause);
+        
+        if (resumeBtn) {
+            resumeBtn.addEventListener('click', hidePause);
+        }
+        
         document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') {
-                if (pauseOverlay.style.display === 'flex') {
+            if (e.key === 'Escape' && isStart) {
+                if (pauseOverlay && pauseOverlay.style.display === 'flex') {
                     hidePause();
+                    if (window.tetris) tetris.play();
                 } else {
                     showPause();
+                    if (window.tetris) tetris.togglePause();
                 }
-            }
-        });
-
-        // Accessibility: focus trap for modal
-        pauseOverlay.addEventListener('keydown', function (e) {
-            if (e.key === 'Tab') {
-                e.preventDefault();
-                resumeBtn.focus();
-            }
-        });
-
-        // Animated background
-        const bgDiv = document.createElement('div');
-        bgDiv.className = 'animated-bg';
-        document.body.prepend(bgDiv);
-
-        // Sound effects
-        const sfx = {
-            line: new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_115b9b2b2b.mp3'),
-            drop: new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_115b9b2b2b.mp3'),
-            gameover: new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_115b9b2b2b.mp3'),
-        };
-        Object.values(sfx).forEach(a => { a.volume = 0.5; });
-
-        // Patch tetris object for sound and animation
-        if (window.tetris) {
-            const origRemoveRow = tetris.removeRow;
-            tetris.removeRow = function (y) {
-                origRemoveRow.call(this, y);
-                if (!isMuted) sfx.line.currentTime = 0, sfx.line.play();
-                // Animate line clear
-                for (let x = 0; x < this.boardWidth; x++) {
-                    const idx = this.sqs.findIndex(sq => this.getPos(sq)[0] === x && this.getPos(sq)[1] === y);
-                    if (idx !== -1) {
-                        const sq = this.sqs[idx];
-                        sq.style.transition = 'opacity 0.3s, transform 0.3s';
-                        sq.style.opacity = '0';
-                        sq.style.transform = 'scale(1.3)';
-                        setTimeout(() => {
-                            if (sq.parentNode) sq.parentNode.removeChild(sq);
-                        }, 300);
-                    }
-                }
-            };
-            const origDrawShape = tetris.drawShape;
-            tetris.drawShape = function (x, y, p) {
-                origDrawShape.call(this, x, y, p);
-                if (!isMuted) sfx.drop.currentTime = 0, sfx.drop.play();
-                // Animate drop
-                this.curSqs.forEach(sq => {
-                    sq.style.transition = 'box-shadow 0.2s, transform 0.2s';
-                    sq.style.boxShadow = '0 0 16px var(--accent2)';
-                    sq.style.transform = 'scale(1.1)';
-                    setTimeout(() => {
-                        sq.style.boxShadow = '';
-                        sq.style.transform = '';
-                    }, 200);
-                });
-            };
-            const origGameOver = tetris.gameOver;
-            tetris.gameOver = function () {
-                origGameOver.call(this);
-                if (!isMuted) sfx.gameover.currentTime = 0, sfx.gameover.play();
-                bgm.pause();
-            };
-        }
-
-        // Touch controls (swipe left/right/down, tap to rotate)
-        let touchStartX = 0, touchStartY = 0;
-        document.getElementById('canvas').addEventListener('touchstart', function (e) {
-            if (e.touches.length === 1) {
-                touchStartX = e.touches[0].clientX;
-                touchStartY = e.touches[0].clientY;
-            }
-        });
-        document.getElementById('canvas').addEventListener('touchend', function (e) {
-            if (!window.tetris || !window.tetris.isActive) return;
-            const dx = e.changedTouches[0].clientX - touchStartX;
-            const dy = e.changedTouches[0].clientY - touchStartY;
-            if (Math.abs(dx) > Math.abs(dy)) {
-                if (dx > 30) window.tetris.move('R');
-                else if (dx < -30) window.tetris.move('L');
-            } else {
-                if (dy > 30) window.tetris.move('D');
-                else if (dy < -30) window.tetris.rotate();
             }
         });
 
         // Next Level Modal logic
         const nextLevelModal = document.getElementById('next-level-modal');
         const nextLevelBtn = document.getElementById('next-level-btn');
+        
         if (window.tetris) {
             tetris.pauseForLevelUp = function () {
                 this.clearTimers();
                 this.isActive = 0;
-                nextLevelModal.style.display = 'flex';
-                nextLevelBtn.focus();
+                if (nextLevelModal) {
+                    nextLevelModal.style.display = 'flex';
+                    if (nextLevelBtn) nextLevelBtn.focus();
+                }
             };
         }
-        nextLevelBtn.addEventListener('click', function () {
-            nextLevelModal.style.display = 'none';
-            if (window.tetris) {
-                tetris.incLevel();
-                tetris.play();
-            }
-        });
+        
+        if (nextLevelBtn) {
+            nextLevelBtn.addEventListener('click', function () {
+                if (nextLevelModal) nextLevelModal.style.display = 'none';
+                if (window.tetris) {
+                    tetris.incLevel();
+                    tetris.play();
+                }
+            });
+        }
     })();
 
     // Add rules modal logic
@@ -791,54 +732,7 @@
         gameStarted = true;
     });
 
-    // Ghost (halo) piece logic
-    (function () {
-        if (!window.tetris) return;
-        // Add a new method to draw the ghost piece
-        tetris.drawGhost = function () {
-            // Remove any existing ghost
-            const oldGhosts = Array.from(this.canvas.querySelectorAll('.ghost'));
-            oldGhosts.forEach(g => g.parentNode.removeChild(g));
-            // Find where the current piece would land
-            let ghostY = this.curY;
-            while (this.checkMove(this.curX, ghostY + 1, this.curShape)) {
-                ghostY++;
-            }
-            // Draw ghost piece
-            for (let i = 0; i < this.curShape.length; i++) {
-                const newX = this.curShape[i][0] + this.curX;
-                const newY = this.curShape[i][1] + ghostY;
-                const el = document.createElement('div');
-                el.className = 'square ghost type' + this.curShapeIndex;
-                el.style.left = newX * this.pSize + 'px';
-                el.style.top = newY * this.pSize + 'px';
-                this.canvas.appendChild(el);
-            }
-        };
-        // Patch drawShape and move/rotate to always update the ghost
-        const origDrawShape = tetris.drawShape;
-        tetris.drawShape = function (x, y, p) {
-            origDrawShape.call(this, x, y, p);
-            this.drawGhost();
-        };
-        const origMove = tetris.move;
-        tetris.move = function (dir) {
-            const result = origMove.call(this, dir);
-            this.drawGhost();
-            return result;
-        };
-        const origRotate = tetris.rotate;
-        tetris.rotate = function () {
-            origRotate.call(this);
-            this.drawGhost();
-        };
-        // Also update ghost on new piece
-        const origInitShapes = tetris.initShapes;
-        tetris.initShapes = function () {
-            origInitShapes.call(this);
-            this.drawGhost();
-        };
-    })();
+
 })();
 
 if (!Array.prototype.eachdo) {
