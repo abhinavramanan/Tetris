@@ -253,15 +253,19 @@
             var dir = '';
             switch (c) {
                 case 37:
+                    e.preventDefault(); // Prevent scroll
                     this.move('L');
                     break;
                 case 38:
+                    e.preventDefault(); // Prevent scroll
                     this.move('RT');
                     break;
                 case 39:
+                    e.preventDefault(); // Prevent scroll
                     this.move('R');
                     break;
                 case 40:
+                    e.preventDefault(); // Prevent scroll
                     this.move('D');
                     break;
                 case 27: //esc: pause
@@ -513,8 +517,52 @@
                 }
             }
             if (c > 0) {
+                this.showLineClearEffect(c);
                 this.calcScore({ lines: c });
             }
+        },
+        showLineClearEffect: function (lineCount) {
+            var effectText = '';
+            var effectClass = '';
+            
+            switch (lineCount) {
+                case 1:
+                    effectText = 'SINGLE!';
+                    effectClass = 'single-clear';
+                    break;
+                case 2:
+                    effectText = 'DOUBLE!';
+                    effectClass = 'double-clear';
+                    break;
+                case 3:
+                    effectText = 'TRIPLE!';
+                    effectClass = 'triple-clear';
+                    break;
+                case 4:
+                    effectText = 'TETRIS!';
+                    effectClass = 'tetris-clear';
+                    break;
+                default:
+                    effectText = lineCount + ' LINES!';
+                    effectClass = 'multi-clear';
+            }
+            
+            // Create effect element
+            var effectEl = document.createElement('div');
+            effectEl.className = 'line-clear-effect ' + effectClass;
+            effectEl.textContent = effectText;
+            document.body.appendChild(effectEl);
+            
+            // Screen flash effect
+            var flashEl = document.createElement('div');
+            flashEl.className = 'screen-flash';
+            document.body.appendChild(flashEl);
+            
+            // Remove effects after animation
+            setTimeout(function() {
+                if (effectEl.parentNode) effectEl.parentNode.removeChild(effectEl);
+                if (flashEl.parentNode) flashEl.parentNode.removeChild(flashEl);
+            }, 2000);
         },
         shiftRow: function (y, amount) {
             var me = this;
