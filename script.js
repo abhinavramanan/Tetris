@@ -616,13 +616,16 @@
             }
         },
     };
+    
+    // Make tetris globally accessible
+    window.tetris = tetris;
     const btn = document.querySelector('#start');
     btn.addEventListener('click', function () {
         btn.style.display = 'none';
         btn.textContent = 'Start'; // Reset button text
         if (!isStart) {
             // Reset game state for restart
-            if (window.tetris) {
+            if (window.tetris && tetris.canvas) {
                 tetris.score = 0;
                 tetris.level = 1;
                 tetris.lines = 0;
