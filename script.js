@@ -661,19 +661,19 @@
         // Simple pause functionality
         const pauseOverlay = document.getElementById('pause-overlay');
         const resumeBtn = document.getElementById('resume');
-        
+
         function showPause() {
             if (pauseOverlay) pauseOverlay.style.display = 'flex';
         }
-        
+
         function hidePause() {
             if (pauseOverlay) pauseOverlay.style.display = 'none';
         }
-        
+
         if (resumeBtn) {
             resumeBtn.addEventListener('click', hidePause);
         }
-        
+
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape' && isStart) {
                 if (pauseOverlay && pauseOverlay.style.display === 'flex') {
@@ -689,7 +689,7 @@
         // Next Level Modal logic
         const nextLevelModal = document.getElementById('next-level-modal');
         const nextLevelBtn = document.getElementById('next-level-btn');
-        
+
         if (window.tetris) {
             tetris.pauseForLevelUp = function () {
                 this.clearTimers();
@@ -700,7 +700,7 @@
                 }
             };
         }
-        
+
         if (nextLevelBtn) {
             nextLevelBtn.addEventListener('click', function () {
                 if (nextLevelModal) nextLevelModal.style.display = 'none';

@@ -65,9 +65,9 @@ body {
     right: 0;
     bottom: 0;
     pointer-events: none;
-    background-image: 
-        repeating-linear-gradient(to right, var(--grid-line) 0 1px, transparent 1px 20px),
-        repeating-linear-gradient(to bottom, var(--grid-line) 0 1px, transparent 1px 20px);
+    background-image:
+            repeating-linear-gradient(to right, var(--grid-line) 0 1px, transparent 1px 20px),
+            repeating-linear-gradient(to bottom, var(--grid-line) 0 1px, transparent 1px 20px);
     background-size: 200px 440px;
     z-index: 1;
 }
@@ -90,7 +90,7 @@ body {
 
 /* Classic Tetris piece colors */
 .type0 { background: #00FFFF; } /* I-piece - Cyan */
-.type1 { background: #FF0000; } /* L-piece - Red */  
+.type1 { background: #FF0000; } /* L-piece - Red */
 .type2 { background: #FFA500; } /* J-piece - Orange */
 .type3 { background: #800080; } /* T-piece - Purple */
 .type4 { background: #00FF00; } /* S-piece - Green */
@@ -189,20 +189,20 @@ body {
     body {
         padding: 10px;
     }
-    
+
     #tetris {
         flex-direction: column;
         align-items: center;
         gap: 15px;
     }
-    
+
     #info {
         width: 200px;
         flex-direction: row;
         flex-wrap: wrap;
         justify-content: space-between;
     }
-    
+
     #next_shape {
         width: 60px;
         height: 60px;
