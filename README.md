@@ -43,32 +43,15 @@ A classic Tetris game implementation built with vanilla HTML, CSS, and JavaScrip
 ## 🚀 Quick Start
 
 ### 🎮 Play Online
-Simply open `index.html` in your web browser to start playing immediately!
+Simply open `index.html` or  `https://abhinavramanan.github.io/Tetris/` in your web browser to start playing immediately!
 
 ### Option 1: Direct File Opening
 1. **Download** or **clone** this repository
 2. **Open** `index.html` in your web browser
 3. **Click** "Start Game" and enjoy!
 
-### Option 2: Local Server (Recommended)
-```bash
-# Clone the repository
-git clone https://github.com/abhinavramanan/Tetris.git
-cd Tetris
-
-# Start a local server (choose one method)
-# Python 3
-python3 -m http.server 8000
-
-# Python 2
-python -m SimpleHTTPServer 8000
-
-# Node.js (if you have http-server installed)
-npx http-server
-
-# Open your browser and go to:
-# http://localhost:8000
-```
+### Option 2: Online (Recommended)
+visit: ` https://abhinavramanan.github.io/Tetris/`
 
 ## 🎮 How to Play
 
