@@ -1,12 +1,73 @@
 (function () {
     var isStart = false;
+    var gameSettings = {
+        soundEnabled: true,
+        theme: 'dark',
+        particles: []
+    };
+
+    // === PARTICLE SYSTEM ===
+    function createParticles() {
+        const particlesContainer = document.getElementById('particles');
+        for (let i = 0; i < 50; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.top = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 6 + 's';
+            particle.style.animationDuration = (3 + Math.random() * 3) + 's';
+            particlesContainer.appendChild(particle);
+        }
+    }
+
+    // === SOUND SYSTEM ===
+    const sounds = {
+        move: () => playBeep(200, 50),
+        rotate: () => playBeep(300, 50),
+        drop: () => playBeep(150, 100),
+        lineClear: () => playBeep(500, 200),
+        tetris: () => playTetrisSound(),
+        gameOver: () => playBeep(100, 500)
+    };
+
+    function playBeep(frequency, duration) {
+        if (!gameSettings.soundEnabled) return;
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = frequency;
+            oscillator.type = 'square';
+
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration / 1000);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration / 1000);
+        } catch (e) {
+            console.log('Audio not supported');
+        }
+    }
+
+    function playTetrisSound() {
+        if (!gameSettings.soundEnabled) return;
+        const notes = [523, 659, 784, 880];
+        notes.forEach((note, i) => {
+            setTimeout(() => playBeep(note, 150), i * 100);
+        });
+    }
+
     var tetris = {
         board: [],
         boardDiv: null,
         canvas: null,
-        pSize: 20,
-        canvasHeight: 440,
-        canvasWidth: 200,
+        pSize: 32, // Changed from 24 to 32 to match CSS
+        canvasHeight: 640, // Changed from 480 to 640
+        canvasWidth: 320,  // Changed from 240 to 320
         boardHeight: 0,
         boardWidth: 0,
         spawnX: 4,
@@ -89,6 +150,7 @@
             this.initShapes();
             this.bindKeyEvents();
             this.play();
+            this.updateDisplays();
         },
         initBoard: function () {
             this.boardHeight = this.canvasHeight / this.pSize;
@@ -97,26 +159,60 @@
             for (var i = 0; i < s; i++) {
                 this.board.push(0);
             }
-            //this.boardDiv = document.getElementById('board); //for debugging
         },
         initInfo: function () {
             this.nextShapeDisplay = document.getElementById('next_shape');
-            this.levelDisplay = document
-                .getElementById('level')
-                .getElementsByTagName('span')[0];
-            this.timeDisplay = document
-                .getElementById('time')
-                .getElementsByTagName('span')[0];
-            this.scoreDisplay = document
-                .getElementById('score')
-                .getElementsByTagName('span')[0];
-            this.linesDisplay = document
-                .getElementById('lines')
-                .getElementsByTagName('span')[0];
+
+            // Use new display elements
+            this.levelDisplay = document.getElementById('level-value');
+            this.timeDisplay = document.getElementById('time-value');
+            this.scoreDisplay = document.getElementById('score-value');
+            this.linesDisplay = document.getElementById('lines-value');
+
+            // Fallback to old elements if new ones don't exist
+            if (!this.levelDisplay) {
+                this.levelDisplay = document.getElementById('level').getElementsByTagName('span')[0];
+            }
+            if (!this.timeDisplay) {
+                this.timeDisplay = document.getElementById('time').getElementsByTagName('span')[0];
+            }
+            if (!this.scoreDisplay) {
+                this.scoreDisplay = document.getElementById('score').getElementsByTagName('span')[0];
+            }
+            if (!this.linesDisplay) {
+                this.linesDisplay = document.getElementById('lines').getElementsByTagName('span')[0];
+            }
+
             this.setInfo('time');
             this.setInfo('score');
             this.setInfo('level');
             this.setInfo('lines');
+        },
+        updateDisplays: function() {
+            // Update both old and new display elements
+            if (document.getElementById('level-value')) {
+                document.getElementById('level-value').textContent = this.level;
+            }
+            if (document.getElementById('score-value')) {
+                document.getElementById('score-value').textContent = this.score;
+            }
+            if (document.getElementById('lines-value')) {
+                document.getElementById('lines-value').textContent = this.lines;
+            }
+            if (document.getElementById('time-value')) {
+                document.getElementById('time-value').textContent = this.time;
+            }
+
+            // Update old elements for compatibility
+            const oldLevel = document.querySelector('#level span');
+            const oldScore = document.querySelector('#score span');
+            const oldLines = document.querySelector('#lines span');
+            const oldTime = document.querySelector('#time span');
+
+            if (oldLevel) oldLevel.textContent = this.level;
+            if (oldScore) oldScore.textContent = this.score;
+            if (oldLines) oldLines.textContent = this.lines;
+            if (oldTime) oldTime.textContent = this.time;
         },
         initShapes: function () {
             this.curSqs = [];
@@ -188,14 +284,31 @@
             }
         },
         setInfo: function (el) {
-            this[el + 'Display'].innerHTML = this[el];
+            if (this[el + 'Display']) {
+                this[el + 'Display'].innerHTML = this[el];
+            }
         },
         drawNextShape: function () {
             var ns = [];
+
+            // Calculate bounding box of the shape to center it properly
+            var minX = Math.min.apply(Math, this.nextShape.map(function(coord) { return coord[0]; }));
+            var maxX = Math.max.apply(Math, this.nextShape.map(function(coord) { return coord[0]; }));
+            var minY = Math.min.apply(Math, this.nextShape.map(function(coord) { return coord[1]; }));
+            var maxY = Math.max.apply(Math, this.nextShape.map(function(coord) { return coord[1]; }));
+
+            var shapeWidth = maxX - minX + 1;
+            var shapeHeight = maxY - minY + 1;
+
+            // Center the shape in the 120px container (which fits ~3.75 pieces at 32px each)
+            var containerSize = 3.75; // 120px / 32px
+            var offsetX = (containerSize - shapeWidth) / 2 - minX;
+            var offsetY = (containerSize - shapeHeight) / 2 - minY;
+
             for (var i = 0; i < this.nextShape.length; i++) {
                 ns[i] = this.createSquare(
-                    this.nextShape[i][0] + 2,
-                    this.nextShape[i][1] + 2,
+                    this.nextShape[i][0] + offsetX,
+                    this.nextShape[i][1] + offsetY,
                     this.nextShapeIndex
                 );
             }
@@ -244,36 +357,68 @@
             };
             if (window.addEventListener) {
                 document.addEventListener(event, cb, false);
+                document.addEventListener('keydown', cb, false); // Also listen for keydown
             } else {
                 document.attachEvent('on' + event, cb);
             }
         },
         handleKey: function (e) {
             var c = this.whichKey(e);
-            var dir = '';
             switch (c) {
-                case 37:
-                    e.preventDefault(); // Prevent scroll
+                case 37: // Left arrow
+                    e.preventDefault();
                     this.move('L');
+                    sounds.move();
                     break;
-                case 38:
-                    e.preventDefault(); // Prevent scroll
+                case 38: // Up arrow
+                    e.preventDefault();
                     this.move('RT');
+                    sounds.rotate();
                     break;
-                case 39:
-                    e.preventDefault(); // Prevent scroll
+                case 39: // Right arrow
+                    e.preventDefault();
                     this.move('R');
+                    sounds.move();
                     break;
-                case 40:
-                    e.preventDefault(); // Prevent scroll
+                case 40: // Down arrow
+                    e.preventDefault();
                     this.move('D');
                     break;
-                case 27: //esc: pause
+                case 32: // Spacebar - Hard drop
+                    e.preventDefault();
+                    this.hardDrop();
+                    sounds.drop();
+                    break;
+                case 27: // Esc - pause
                     this.togglePause();
                     break;
                 default:
                     break;
             }
+        },
+        hardDrop: function() {
+            // Find the lowest possible position for the current piece
+            var dropY = this.curY;
+            while (this.checkMove(this.curX, dropY + 1, this.curShape)) {
+                dropY++;
+            }
+
+            // Update the piece position instantly
+            this.curY = dropY;
+
+            // Update the visual position of all current piece squares
+            var me = this;
+            this.curSqs.eachdo(function (i) {
+                var pieceY = me.curShape[i][1] + me.curY;
+                this.style.top = (pieceY * me.pSize) + 'px';
+            });
+
+            // Mark piece as complete for immediate placement
+            this.curComplete = true;
+
+            // Remove ghost since piece has landed
+            const oldGhosts = Array.from(this.canvas.querySelectorAll('.ghost'));
+            oldGhosts.forEach(g => g.parentNode.removeChild(g));
         },
         whichKey: function (e) {
             var c;
@@ -287,19 +432,23 @@
         incTime: function () {
             this.time++;
             this.setInfo('time');
+            this.updateDisplays();
         },
         incScore: function (amount) {
             this.score = this.score + amount;
             this.setInfo('score');
+            this.updateDisplays();
         },
         incLevel: function () {
             this.level++;
-            this.speed = this.speed - 75;
+            this.speed = Math.max(100, this.speed - 75); // Minimum speed limit
             this.setInfo('level');
+            this.updateDisplays();
         },
         incLines: function (num) {
             this.lines += num;
             this.setInfo('lines');
+            this.updateDisplays();
         },
         calcScore: function (args) {
             var lines = args.lines || 0;
@@ -312,9 +461,8 @@
                 this.incLines(lines);
             }
             if (shape === true) {
-                score += shape * this['level' + this.level][2];
+                score += this['level' + this.level][2];
             }
-            /*if (speed > 0){ score += speed * this["level" +this .level[3]];}*/
             this.incScore(score);
         },
         checkScore: function () {
@@ -329,12 +477,26 @@
         gameOver: function () {
             this.clearTimers();
             isStart = false;
-            this.canvas.innerHTML = '<div style="color: #ff6666; text-align: center; margin-top: 200px; font-size: 24px; font-weight: bold;">GAME OVER</div>';
+            sounds.gameOver();
+
+            // Show game over modal with stats
+            const gameOverModal = document.getElementById('game-over-modal');
+            if (gameOverModal) {
+                document.getElementById('final-score').textContent = this.score;
+                document.getElementById('final-level').textContent = this.level;
+                document.getElementById('final-lines').textContent = this.lines;
+                document.getElementById('final-time').textContent = this.time;
+                gameOverModal.style.display = 'flex';
+            } else {
+                // Fallback to canvas display
+                this.canvas.innerHTML = '<div style="color: #ff6666; text-align: center; margin-top: 200px; font-size: 24px; font-weight: bold;">GAME OVER</div>';
+            }
+
             // Show start button again for restart
             const startBtn = document.getElementById('start');
             if (startBtn) {
                 startBtn.style.display = 'block';
-                startBtn.textContent = 'Restart';
+                startBtn.textContent = 'RESTART';
             }
         },
         play: function () {
@@ -362,11 +524,14 @@
             this.isActive = 1;
         },
         togglePause: function () {
+            const pauseOverlay = document.getElementById('pause-overlay');
             if (this.isActive === 1) {
                 this.clearTimers();
                 this.isActive = 0;
+                if (pauseOverlay) pauseOverlay.style.display = 'flex';
             } else {
                 this.play();
+                if (pauseOverlay) pauseOverlay.style.display = 'none';
             }
         },
         clearTimers: function () {
@@ -396,7 +561,6 @@
                 case 'RT':
                     this.rotate();
                     return true;
-                    break;
                 default:
                     console.warn('Invalid move direction:', dir);
                     return false;
@@ -519,6 +683,11 @@
             if (c > 0) {
                 this.showLineClearEffect(c);
                 this.calcScore({ lines: c });
+                if (c === 4) {
+                    sounds.tetris();
+                } else {
+                    sounds.lineClear();
+                }
             }
         },
         showLineClearEffect: function (lineCount) {
@@ -652,105 +821,141 @@
             while (this.checkMove(this.curX, ghostY + 1, this.curShape)) {
                 ghostY++;
             }
-            // Draw ghost piece
-            for (let i = 0; i < this.curShape.length; i++) {
-                const newX = this.curShape[i][0] + this.curX;
-                const newY = this.curShape[i][1] + ghostY;
-                const el = document.createElement('div');
-                el.className = 'square ghost type' + this.curShapeIndex;
-                el.style.left = newX * this.pSize + 'px';
-                el.style.top = newY * this.pSize + 'px';
-                this.canvas.appendChild(el);
+            // Only draw ghost if it's different from current position
+            if (ghostY !== this.curY) {
+                // Draw ghost piece
+                for (let i = 0; i < this.curShape.length; i++) {
+                    const newX = this.curShape[i][0] + this.curX;
+                    const newY = this.curShape[i][1] + ghostY;
+                    const el = document.createElement('div');
+                    el.className = 'square ghost type' + this.curShapeIndex;
+                    el.style.left = newX * this.pSize + 'px';
+                    el.style.top = newY * this.pSize + 'px';
+                    this.canvas.appendChild(el);
+                }
             }
         },
     };
     
     // Make tetris globally accessible
     window.tetris = tetris;
-    const btn = document.querySelector('#start');
-    btn.addEventListener('click', function () {
-        btn.style.display = 'none';
-        btn.textContent = 'Start'; // Reset button text
-        if (!isStart) {
-            // Reset game state for restart
-            if (window.tetris && tetris.canvas) {
-                tetris.score = 0;
-                tetris.level = 1;
-                tetris.lines = 0;
-                tetris.time = 0;
-                tetris.speed = 700;
-                tetris.board = [];
-                tetris.sqs = [];
-                tetris.canvas.innerHTML = '';
-                var s = tetris.boardHeight * tetris.boardWidth;
-                for (var i = 0; i < s; i++) {
-                    tetris.board.push(0);
-                }
-            }
-            tetris.init();
-        }
-    });
 
-    // === SIMPLE UI CONTROLS ===
-    (function () {
-        // Simple theme toggle
-        const themeBtn = document.getElementById('toggle-theme');
-        if (themeBtn) {
-            themeBtn.addEventListener('click', function () {
-                const body = document.body;
-                const isLight = body.style.background === 'rgb(255, 255, 255)';
-                if (isLight) {
-                    body.style.background = '#000000';
-                    themeBtn.textContent = 'Light';
-                } else {
-                    body.style.background = '#ffffff';
-                    themeBtn.textContent = 'Dark';
+    // === INITIALIZATION AND EVENT HANDLERS ===
+    document.addEventListener('DOMContentLoaded', function() {
+        createParticles();
+
+        // Game start button
+        const btn = document.querySelector('#start');
+        if (btn) {
+            btn.addEventListener('click', function () {
+                btn.style.display = 'none';
+                btn.textContent = 'START GAME'; // Reset button text
+                if (!isStart) {
+                    // Reset game state for restart
+                    if (window.tetris && tetris.canvas) {
+                        tetris.score = 0;
+                        tetris.level = 1;
+                        tetris.lines = 0;
+                        tetris.time = 0;
+                        tetris.speed = 700;
+                        tetris.board = [];
+                        tetris.sqs = [];
+                        tetris.canvas.innerHTML = '';
+                        var s = tetris.boardHeight * tetris.boardWidth;
+                        for (var i = 0; i < s; i++) {
+                            tetris.board.push(0);
+                        }
+                    }
+                    tetris.init();
                 }
             });
         }
 
-        // Simple pause functionality
+        // Enhanced UI Controls
+        setupUIControls();
+    });
+
+    function setupUIControls() {
+        // Theme toggle
+        const themeBtn = document.getElementById('toggle-theme');
+        const themeText = document.getElementById('theme-text');
+        if (themeBtn) {
+            // Initialize button text based on current theme
+            if (themeText) {
+                themeText.textContent = gameSettings.theme === 'dark' ? 'DARK' : 'LIGHT';
+            }
+
+            themeBtn.addEventListener('click', function () {
+                const body = document.body;
+                if (gameSettings.theme === 'dark') {
+                    // Switch to light theme
+                    body.classList.add('light-theme');
+                    gameSettings.theme = 'light';
+                    if (themeText) themeText.textContent = 'LIGHT';
+                } else {
+                    // Switch to dark theme
+                    body.classList.remove('light-theme');
+                    gameSettings.theme = 'dark';
+                    if (themeText) themeText.textContent = 'DARK';
+                }
+            });
+        }
+
+        // Sound toggle
+        const soundBtn = document.getElementById('sound-toggle');
+        const soundText = document.getElementById('sound-text');
+        if (soundBtn) {
+            soundBtn.addEventListener('click', function () {
+                gameSettings.soundEnabled = !gameSettings.soundEnabled;
+                if (soundText) {
+                    soundText.textContent = gameSettings.soundEnabled ? 'SOUND ON' : 'SOUND OFF';
+                }
+            });
+        }
+
+        // Fullscreen toggle
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        if (fullscreenBtn) {
+            fullscreenBtn.addEventListener('click', function () {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(console.error);
+                } else {
+                    document.exitFullscreen().catch(console.error);
+                }
+            });
+        }
+
+        // Modal controls
+        setupModalControls();
+    }
+
+    function setupModalControls() {
+        // Pause/Resume
         const pauseOverlay = document.getElementById('pause-overlay');
         const resumeBtn = document.getElementById('resume');
 
-        function showPause() {
-            if (pauseOverlay) pauseOverlay.style.display = 'flex';
-        }
-
-        function hidePause() {
-            if (pauseOverlay) pauseOverlay.style.display = 'none';
-        }
-
         if (resumeBtn) {
-            resumeBtn.addEventListener('click', hidePause);
+            resumeBtn.addEventListener('click', function() {
+                if (pauseOverlay) pauseOverlay.style.display = 'none';
+                if (window.tetris && isStart) tetris.play();
+            });
         }
 
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape' && isStart) {
-                if (pauseOverlay && pauseOverlay.style.display === 'flex') {
-                    hidePause();
-                    if (window.tetris) tetris.play();
-                } else {
-                    showPause();
-                    if (window.tetris) tetris.togglePause();
-                }
-            }
-        });
+        // Rules modal
+        const rulesModal = document.getElementById('rules-modal');
+        const rulesContinue = document.getElementById('rules-continue');
+        const startBtn = document.getElementById('start');
 
-        // Next Level Modal logic
+        if (rulesContinue) {
+            rulesContinue.addEventListener('click', function () {
+                if (rulesModal) rulesModal.style.display = 'none';
+                if (startBtn) startBtn.click();
+            });
+        }
+
+        // Next Level Modal
         const nextLevelModal = document.getElementById('next-level-modal');
         const nextLevelBtn = document.getElementById('next-level-btn');
-
-        if (window.tetris) {
-            tetris.pauseForLevelUp = function () {
-                this.clearTimers();
-                this.isActive = 0;
-                if (nextLevelModal) {
-                    nextLevelModal.style.display = 'flex';
-                    if (nextLevelBtn) nextLevelBtn.focus();
-                }
-            };
-        }
 
         if (nextLevelBtn) {
             nextLevelBtn.addEventListener('click', function () {
@@ -761,31 +966,55 @@
                 }
             });
         }
-    })();
 
-    // Add rules modal logic
-    const rulesModal = document.getElementById('rules-modal');
-    const rulesContinue = document.getElementById('rules-continue');
-    const startBtn = document.getElementById('start');
-    let gameStarted = false;
+        // Game Over Modal
+        const gameOverModal = document.getElementById('game-over-modal');
+        const restartBtn = document.getElementById('restart-btn');
 
-    function showRules() {
-        rulesModal.style.display = 'flex';
+        if (restartBtn) {
+            restartBtn.addEventListener('click', function() {
+                if (gameOverModal) gameOverModal.style.display = 'none';
+                if (startBtn) {
+                    startBtn.style.display = 'block';
+                    startBtn.click();
+                }
+            });
+        }
+
+        // ESC key handling
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && isStart) {
+                if (window.tetris) tetris.togglePause();
+            }
+        });
+
+        // Setup level up pause function
+        if (window.tetris) {
+            tetris.pauseForLevelUp = function () {
+                this.clearTimers();
+                this.isActive = 0;
+                if (nextLevelModal) {
+                    nextLevelModal.style.display = 'flex';
+                    if (nextLevelBtn) nextLevelBtn.focus();
+                }
+            };
+        }
     }
-    function hideRules() {
-        rulesModal.style.display = 'none';
+
+    // Initialize when DOM loads if it hasn't already
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            createParticles();
+            setupUIControls();
+        });
+    } else {
+        createParticles();
+        setupUIControls();
     }
-    showRules();
-
-    rulesContinue.addEventListener('click', function () {
-        hideRules();
-        startBtn.click();
-        gameStarted = true;
-    });
-
 
 })();
 
+// Array prototype extensions (keep existing)
 if (!Array.prototype.eachdo) {
     Array.prototype.eachdo = function (fn) {
         for (var i = 0; i < this.length; i++) {

@@ -1,52 +1,152 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>TETRIS</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 CYBERPUNK TETRIS</title>
     <link rel="stylesheet" type="text/css" href="styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
 <body>
-<div class="ui-bar">
-    <button id="toggle-theme" aria-label="Toggle theme">Theme</button>
-</div>
-<div id="tetris">
-    <div id="canvas"></div>
-    <div id="info">
-        <div id="next_shape"></div>
+    <!-- Floating Particles Background -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Top UI Bar -->
+    <div class="ui-bar">
+        <button id="toggle-theme" class="ui-btn" aria-label="Toggle theme">
+            <span id="theme-text">THEME</span>
+        </button>
+        <button id="fullscreen-btn" class="ui-btn" aria-label="Toggle fullscreen">
+            FULLSCREEN
+        </button>
+        <button id="sound-toggle" class="ui-btn" aria-label="Toggle sound">
+            <span id="sound-text">SOUND ON</span>
+        </button>
+    </div>
+
+    <!-- Main Game Container -->
+    <div class="game-container">
+        <div id="tetris">
+            <!-- Game Canvas -->
+            <div id="canvas"></div>
+
+            <!-- Game Info Panel -->
+            <div id="info">
+                <!-- Next Shape Preview -->
+                <div class="next-container">
+                    <div class="next-label">Next Piece</div>
+                    <div id="next_shape"></div>
+                </div>
+
+                <!-- Game Statistics -->
+                <div class="stat-item" id="level-stat">
+                    <div class="stat-label">Level</div>
+                    <div class="stat-value" id="level-value">1</div>
+                </div>
+
+                <div class="stat-item" id="lines-stat">
+                    <div class="stat-label">Lines</div>
+                    <div class="stat-value" id="lines-value">0</div>
+                </div>
+
+                <div class="stat-item" id="score-stat">
+                    <div class="stat-label">Score</div>
+                    <div class="stat-value" id="score-value">0</div>
+                </div>
+
+                <div class="stat-item" id="time-stat">
+                    <div class="stat-label">Time</div>
+                    <div class="stat-value" id="time-value">0</div>
+                </div>
+
+                <!-- Game Controls -->
+                <button id="start" class="game-btn">START GAME</button>
+
+                <!-- Controls Information -->
+                <div class="controls-info">
+                    <div style="margin-bottom: 8px; font-weight: bold;">CONTROLS</div>
+                    <div>← → Move | ↓ Drop | ↑ Rotate</div>
+                    <div>ESC Pause | SPACE Hard Drop</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pause Modal -->
+    <div id="pause-overlay" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h2>⏸️ GAME PAUSED</h2>
+            <p>Take a break and come back when you're ready!</p>
+            <button id="resume" class="game-btn">RESUME</button>
+        </div>
+    </div>
+
+    <!-- Level Up Modal -->
+    <div id="next-level-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h2>🎯 LEVEL UP!</h2>
+            <p>You've reached the next level!</p>
+            <p>Get ready for increased speed and challenge.</p>
+            <button id="next-level-btn" class="game-btn">CONTINUE</button>
+        </div>
+    </div>
+
+    <!-- Rules Modal -->
+    <div id="rules-modal" class="modal" style="display:flex;">
+        <div class="modal-content">
+            <h2>🎮 TETRIS</h2>
+            <div style="text-align: left; max-width: 400px; margin: 0 auto 20px auto;">
+                <h3 style="color: var(--neon-cyan); margin-bottom: 15px;">OBJECTIVE</h3>
+                <ul style="margin-bottom: 20px;">
+                    <li>Arrange falling tetrominoes to create complete horizontal lines</li>
+                    <li>Complete lines disappear and earn points</li>
+                    <li>Survive as long as possible as speed increases</li>
+                </ul>
+
+                <h3 style="color: var(--neon-green); margin-bottom: 15px;">CONTROLS</h3>
+                <ul style="margin-bottom: 20px;">
+                    <li><strong>← →</strong> Move pieces left/right</li>
+                    <li><strong>↓</strong> Soft drop (faster fall)</li>
+                    <li><strong>↑</strong> Rotate piece clockwise</li>
+                    <li><strong>SPACE</strong> Hard drop (instant fall)</li>
+                    <li><strong>ESC</strong> Pause/Resume game</li>
+                </ul>
+
+                <h3 style="color: var(--neon-pink); margin-bottom: 15px;">SCORING</h3>
+                <ul>
+                    <li><strong>Single:</strong> 1 line cleared</li>
+                    <li><strong>Double:</strong> 2 lines cleared</li>
+                    <li><strong>Triple:</strong> 3 lines cleared</li>
+                    <li><strong>TETRIS:</strong> 4 lines cleared (maximum points!)</li>
+                </ul>
+            </div>
+            <button id="rules-continue" class="game-btn">START GAME</button>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="game-over-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h2>💀 GAME OVER</h2>
+            <div id="final-stats">
+                <p>Final Score: <span id="final-score">0</span></p>
+                <p>Level Reached: <span id="final-level">1</span></p>
+                <p>Lines Cleared: <span id="final-lines">0</span></p>
+                <p>Time Played: <span id="final-time">0</span>s</p>
+            </div>
+            <button id="restart-btn" class="game-btn">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <!-- Hidden elements for compatibility -->
+    <div style="display: none;">
         <p id="level">Level: <span>1</span></p>
         <p id="lines">Lines: <span>0</span></p>
         <p id="score">Score: <span>0</span></p>
         <p id="time">Time: <span>0</span></p>
-        <button id="start">Start</button>
-        <p class="red">Press Esc to pause</p>
     </div>
-</div>
-<div id="pause-overlay" class="modal" style="display:none;">
-    <div class="modal-content">
-        <h2>Paused</h2>
-        <button id="resume">Resume</button>
-    </div>
-</div>
-<div id="next-level-modal" class="modal" style="display:none;">
-    <div class="modal-content">
-        <h2>Level Up!</h2>
-        <p>Get ready for the next level.</p>
-        <button id="next-level-btn">Continue</button>
-    </div>
-</div>
-<div id="rules-modal" class="modal" style="display:flex;">
-    <div class="modal-content">
-        <h2>How to Play Tetris</h2>
-        <ul style="text-align:left;max-width:340px;margin:0 auto 18px auto;">
-            <li>Move and rotate falling blocks to complete horizontal lines.</li>
-            <li>Completed lines disappear and score points.</li>
-            <li>Game speed increases as you level up.</li>
-            <li>Use arrow keys to control blocks.</li>
-            <li>Press Esc to pause. Click Continue to advance to the next level.</li>
-            <li>Game ends when the stack reaches the top.</li>
-        </ul>
-        <button id="rules-continue">Start Game</button>
-    </div>
-</div>
-<script type="text/javascript" src="script.js"></script>
+
+    <script type="text/javascript" src="script.js"></script>
 </body>
 </html>
